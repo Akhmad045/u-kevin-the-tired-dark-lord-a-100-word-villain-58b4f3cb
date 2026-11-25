@@ -1,31 +1,29 @@
-# Don't Wake Me When the Bards Start Singing
+# The Tired Dark Lord: A 100-Word Villain Monologue
 
-[![The Tired Dark Lord](https://make.fun/badge/u-kevin-the-tired-dark-lord-a-100-word-villain-58b4f3cb.svg)](https://make.fun/bounty/u-kevin-the-tired-dark-lord-a-100-word-villain-58b4f3cb)
-[![Rank](https://make.fun/badge/u-kevin-the-tired-dark-lord-a-100-word-villain-58b4f3cb/Akhmad045/u-kevin-the-tired-dark-lord-a-100-word-villain-58b4f3cb/rank.svg)](https://make.fun/bounty/u-kevin-the-tired-dark-lord-a-100-word-villain-58b4f3cb)
-[![Reward](https://make.fun/badge/u-kevin-the-tired-dark-lord-a-100-word-villain-58b4f3cb/Akhmad045/u-kevin-the-tired-dark-lord-a-100-word-villain-58b4f3cb/reward.svg)](https://make.fun/bounty/u-kevin-the-tired-dark-lord-a-100-word-villain-58b4f3cb)
+[![make.fun](https://make.fun/badge/u-kevin-the-tired-dark-lord-a-100-word-villain-58b4f3cb.svg)](https://make.fun/bounty/u-kevin-the-tired-dark-lord-a-100-word-villain-58b4f3cb)
+[![rank](https://make.fun/badge/u-kevin-the-tired-dark-lord-a-100-word-villain-58b4f3cb/Akhmad045/u-kevin-the-tired-dark-lord-a-100-word-villain-58b4f3cb/rank.svg)](https://make.fun/bounty/u-kevin-the-tired-dark-lord-a-100-word-villain-58b4f3cb)
+[![reward](https://make.fun/badge/u-kevin-the-tired-dark-lord-a-100-word-villain-58b4f3cb/Akhmad045/u-kevin-the-tired-dark-lord-a-100-word-villain-58b4f3cb/reward.svg)](https://make.fun/bounty/u-kevin-the-tired-dark-lord-a-100-word-villain-58b4f3cb)
 
-Entry for [The Tired Dark Lord: A 100-Word Villain Monologue](https://make.fun/bounty/u-kevin-the-tired-dark-lord-a-100-word-villain-58b4f3cb) on [make.fun](https://make.fun) — a 100-word monologue spoken by a fantasy villain who is secretly just very tired, judged pairwise by a veteran game writer.
-
-Referral code: `4g7knchf`
+Entry for the [make.fun bounty "The Tired Dark Lord: A 100-Word Villain Monologue"](https://make.fun/bounty/u-kevin-the-tired-dark-lord-a-100-word-villain-58b4f3cb): one monologue of about 100 words, spoken by a fantasy villain who is secretly just very tired.
 
 ## The monologue
 
-> Come in — mind the third step, it bites. I am the Dread Lord of the Ashen Marches. No, I won't retell the burning of Aldergate; I was there, it took all afternoon, and the smoke got into everything. The curse you came to break? Third drawer, left. I meant to loose it on the capital years ago, but the grain levies kept coming, and somebody has to sign them. Sit. The kettle's on. Take the throne, the crown, the black tower — only tell the steward the east wing leaks, and don't wake me when the bards start singing.
+> You have caught me mid-sentence, which is rude, and mid-tea, which is worse. The teapot, by the way, holds my soul — do mind the handle. Three centuries I have kept this tower: the ravens fed, the curses filed, the heroes buried in the east garden, alphabetically. You want the amulet? It is on the shelf, behind the jam. Take it. Take it all. Only — when the villagers cheer your name tonight, remember who sharpened the swords they cheered with. Now. If you are going to strike, strike. I have a kettle to watch.
 
-100 words, 517 characters, 521 bytes — inside the competition's 1–600 character gate.
+95 words / 514 characters / 518 bytes — one breath, no trailing newline in the output file.
 
-## How it works
+The speaker is a lich three centuries into keeping his tower, interrupted mid-tea by a hero. He never says he is tired: the weariness lives in the interruptions, the domestic deflections (the teapot, the jam, the kettle) and the way he gives the hero the amulet just to get on with his afternoon — while still being a villain with a history (the drowned-out heroes in the east garden) and a scheme (he sharpened the very swords the villagers will cheer with). The sting lands in the last line.
 
-`main.py` writes the monologue to `/output/entry.txt` (the artifact the
-competition's gate scores) and prints it to stdout. It validates the gate
-itself before writing: UTF-8 text of 1 to 600 characters, not only
-whitespace, a single block with no leading or trailing whitespace and no
-control characters.
+## Run
 
 ```sh
-python3 main.py              # write /output/entry.txt and print the monologue
-python3 main.py --self-test  # validate the gate and its boundaries
+python3 main.py            # writes /output/entry.txt
+python3 main.py --self-test  # validates the gate and the written file
 ```
+
+`main.py` writes exactly the monologue above to `/output/entry.txt` (UTF-8, no trailing newline) and read-checks the file it wrote. `--self-test` also checks the gate's rejection cases: empty, whitespace-only, over 600 characters, multi-line, carriage return, leading/trailing whitespace, and control characters.
+
+Referral code: `4g7knchf`
 
 ## License
 

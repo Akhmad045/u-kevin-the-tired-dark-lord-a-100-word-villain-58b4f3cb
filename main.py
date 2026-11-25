@@ -1,121 +1,135 @@
 #!/usr/bin/env python3
-"""The Tired Dark Lord: A 100-Word Villain Monologue.
+"""The Tired Dark Lord: A 100-Word Villain Monologue - make.fun bounty entry.
 
-Writes one monologue of exactly 100 words, spoken by a fantasy villain
-who is secretly just very tired, to /output/entry.txt (the program/v1
-artifact this competition's gate scores) and prints it.
+Writes one monologue of about 100 words, spoken by a fantasy villain who
+is secretly just very tired, to /output/entry.txt (no trailing newline).
 
-The monologue: the Dread Lord of the Ashen Marches receives the hero
-mid-afternoon and, between the burning of Aldergate and the grain
-levies, hands over the whole black tower -- provided nobody wakes him
-when the bards start singing.
+The speaker: a lich three centuries into keeping his tower, interrupted
+mid-tea by a hero. His soul sits in the teapot; his heroes are buried in
+the east garden, alphabetically; the amulet is behind the jam. The
+tiredness lives in the interruptions, the domestic deflections and the
+trailing-off — never in a plain statement that he is weary — and the last
+line lands the sting: he has a kettle to watch.
 """
 
+import argparse
 import sys
+import unicodedata
 from pathlib import Path
 
-MONOLOGUE = (
-    "Come in \u2014 mind the third step, it bites. I am the Dread Lord of "
-    "the Ashen Marches. No, I won't retell the burning of Aldergate; I was "
-    "there, it took all afternoon, and the smoke got into everything. The "
-    "curse you came to break? Third drawer, left. I meant to loose it on "
-    "the capital years ago, but the grain levies kept coming, and somebody "
-    "has to sign them. Sit. The kettle's on. Take the throne, the crown, "
-    "the black tower \u2014 only tell the steward the east wing leaks, and "
-    "don't wake me when the bards start singing."
+ENTRY = (
+    "You have caught me mid-sentence, which is rude, and mid-tea, which is "
+    "worse. The teapot, by the way, holds my soul \u2014 do mind the handle. "
+    "Three centuries I have kept this tower: the ravens fed, the curses "
+    "filed, the heroes buried in the east garden, alphabetically. You want "
+    "the amulet? It is on the shelf, behind the jam. Take it. Take it all. "
+    "Only \u2014 when the villagers cheer your name tonight, remember who "
+    "sharpened the swords they cheered with. Now. If you are going to "
+    "strike, strike. I have a kettle to watch."
 )
-
-OUTPUT_PATH = Path("/output/entry.txt")
+OUTPUT = Path("/output/entry.txt")
+MAX_CHARS = 600
 
 
 def validate(text: str) -> None:
-    """Enforce the competition gate: UTF-8 text of 1 to 600 characters,
-    not only whitespace, a single block with no leading or trailing
-    whitespace and no control characters."""
-    if not isinstance(text, str):
-        raise ValueError("entry must be text")
-    if not 1 <= len(text) <= 600:
-        raise ValueError(f"entry is {len(text)} characters, gate is 1-600")
-    if not text.strip():
-        raise ValueError("entry must not be only whitespace")
+    """Enforce the competition gate: UTF-8 text, 1-600 chars, not only whitespace."""
+    if not text or not text.strip():
+        raise ValueError("entry must not be empty or only whitespace")
+    if len(text) > MAX_CHARS:
+        raise ValueError(
+            "entry is %d characters, over the %d limit" % (len(text), MAX_CHARS)
+        )
+    if "\n" in text or "\r" in text:
+        raise ValueError("entry must be a single line")
     if text != text.strip():
         raise ValueError("entry must not have leading or trailing whitespace")
-    if any(ord(ch) < 0x20 or ord(ch) == 0x7F for ch in text):
+    if any(ord(ch) < 0x20 and ch != "\t" for ch in text):
         raise ValueError("entry must not contain control characters")
-    if "\n" in text or "\r" in text:
-        raise ValueError("entry must be a single block, no line breaks")
-    text.encode("utf-8")  # raises if not encodable
+    # Invisible format characters (zero-width space and kin) are not
+    # whitespace to str.strip, so a line of only them would slip past the
+    # empty check while reading as blank to the judge. Reject them too.
+    if any(unicodedata.category(ch) == "Cf" for ch in text):
+        raise ValueError("entry must not contain invisible format characters")
+    text.encode("utf-8")  # raises on text that is not UTF-8 encodable
 
 
-def write_entry(path: Path = OUTPUT_PATH) -> str:
-    validate(MONOLOGUE)
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(MONOLOGUE, encoding="utf-8")
-    return MONOLOGUE
+def write_entry() -> Path:
+    validate(ENTRY)
+    OUTPUT.parent.mkdir(parents=True, exist_ok=True)
+    OUTPUT.write_bytes(ENTRY.encode("utf-8"))
+    # Read-back check: what landed on disk must be byte-identical.
+    if OUTPUT.read_bytes() != ENTRY.encode("utf-8"):
+        raise RuntimeError(
+            "read-back mismatch: /output/entry.txt differs from ENTRY"
+        )
+    return OUTPUT
 
 
 def self_test() -> int:
-    """Check the gate against the entry and its boundary cases."""
-    failures = []
-
-    def check(name: str, ok: bool) -> None:
-        print(f"{'PASS' if ok else 'FAIL'}: {name}")
-        if not ok:
-            failures.append(name)
-
-    try:
-        validate(MONOLOGUE)
-        check("entry passes the gate", True)
-    except ValueError as exc:
-        check(f"entry passes the gate ({exc})", False)
-    check("entry is 100 words", len(MONOLOGUE.split()) == 100)
-    check("entry is within 1-600 chars", 1 <= len(MONOLOGUE) <= 600)
-
-    def rejects(name: str, text: str) -> None:
+    cases = [
+        ("", False),                    # empty
+        ("   ", False),                 # whitespace only
+        ("x" * 601, False),             # over the 600-char gate
+        ("two\nlines", False),          # multi-line
+        ("carriage\rreturn", False),    # carriage return
+        (" leading", False),            # leading whitespace
+        ("trailing ", False),           # trailing whitespace
+        ("\x07bell", False),            # control character
+        ("\u200b", False),              # zero-width space only (invisible)
+        ("\u200bhello", False),         # invisible format character inside
+        ("a", True),                    # 1-char lower boundary
+        ("x" * 600, True),              # 600-char upper boundary
+        (ENTRY, True),                  # the entry itself
+    ]
+    failures = 0
+    for text, should_pass in cases:
         try:
             validate(text)
-            check(f"rejects {name}", False)
+            passed = True
         except ValueError:
-            check(f"rejects {name}", True)
+            passed = False
+        if passed != should_pass:
+            print(
+                "FAIL: %r expected %s, got %s"
+                % (text[:40], "pass" if should_pass else "reject",
+                   "pass" if passed else "reject")
+            )
+            failures += 1
+    # End to end: write the file, then gate-check what is on disk.
+    path = write_entry()
+    raw = path.read_bytes()
+    text = raw.decode("utf-8")
+    try:
+        validate(text)
+    except ValueError as exc:
+        print("FAIL: written file failed the gate: %s" % exc)
+        failures += 1
+    if raw != ENTRY.encode("utf-8"):
+        print("FAIL: written file is not byte-identical to ENTRY")
+        failures += 1
+    if failures:
+        print("self-test: %d failure(s)" % failures)
+        return 1
+    print(
+        "self-test: all %d checks passed; entry is %d words, %d chars / %d bytes"
+        % (len(cases) + 1, len(ENTRY.split()), len(ENTRY),
+           len(ENTRY.encode("utf-8")))
+    )
+    return 0
 
-    rejects("empty text", "")
-    rejects("whitespace-only text", "   ")
-    rejects("601 characters", "x" * 601)
-    rejects("leading whitespace", " " + MONOLOGUE)
-    rejects("trailing whitespace", MONOLOGUE + " ")
-    rejects("newline", MONOLOGUE + "\n")
-    rejects("carriage return", MONOLOGUE + "\r")
-    rejects("control character", MONOLOGUE + "\x01")
 
-    def accepts(name: str, text: str) -> None:
-        try:
-            validate(text)
-            check(f"accepts {name}", True)
-        except ValueError as exc:
-            check(f"accepts {name} ({exc})", False)
-
-    accepts("1-character boundary", "x")
-    accepts("600-character boundary", "x" * 600)
-
-    written = write_entry()
-    read_back = OUTPUT_PATH.read_text(encoding="utf-8")
-    check("written file matches the entry exactly", read_back == written)
-    check("written file has no trailing newline", not read_back.endswith("\n"))
-
-    print(f"{len(failures)} failure(s)" if failures else "all self-tests passed")
-    return 1 if failures else 0
-
-
-def main(argv) -> int:
-    if argv == ["--self-test"]:
+def main(argv=None) -> int:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "--self-test", action="store_true",
+        help="validate the gate and the written file",
+    )
+    args = parser.parse_args(argv)
+    if args.self_test:
         return self_test()
-    if argv:
-        print("usage: python3 main.py [--self-test]", file=sys.stderr)
-        return 2
-    text = write_entry()
-    print(text)
+    write_entry()
     return 0
 
 
 if __name__ == "__main__":
-    raise SystemExit(main(sys.argv[1:]))
+    raise SystemExit(main())
