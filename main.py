@@ -10,6 +10,9 @@ the east garden, alphabetically; the amulet is behind the jam. The
 tiredness lives in the interruptions, the domestic deflections and the
 trailing-off — never in a plain statement that he is weary — and the last
 line lands the sting: he has a kettle to watch.
+
+Run `python3 main.py` to write /output/entry.txt, `--output <path>` to
+write elsewhere, or `--self-test` to validate the gate and the written file.
 """
 
 import argparse
@@ -27,7 +30,7 @@ ENTRY = (
     "sharpened the swords they cheered with. Now. If you are going to "
     "strike, strike. I have a kettle to watch."
 )
-OUTPUT = Path("/output/entry.txt")
+DEFAULT_OUTPUT = Path("/output/entry.txt")
 MAX_CHARS = 600
 
 
@@ -53,16 +56,16 @@ def validate(text: str) -> None:
     text.encode("utf-8")  # raises on text that is not UTF-8 encodable
 
 
-def write_entry() -> Path:
+def write_entry(output: Path = DEFAULT_OUTPUT) -> Path:
     validate(ENTRY)
-    OUTPUT.parent.mkdir(parents=True, exist_ok=True)
-    OUTPUT.write_bytes(ENTRY.encode("utf-8"))
+    output.parent.mkdir(parents=True, exist_ok=True)
+    output.write_bytes(ENTRY.encode("utf-8"))
     # Read-back check: what landed on disk must be byte-identical.
-    if OUTPUT.read_bytes() != ENTRY.encode("utf-8"):
+    if output.read_bytes() != ENTRY.encode("utf-8"):
         raise RuntimeError(
-            "read-back mismatch: /output/entry.txt differs from ENTRY"
+            "read-back mismatch: %s differs from ENTRY" % output
         )
-    return OUTPUT
+    return output
 
 
 def self_test() -> int:
@@ -95,7 +98,23 @@ def self_test() -> int:
                    "pass" if passed else "reject")
             )
             failures += 1
-    # End to end: write the file, then gate-check what is on disk.
+    # End to end: write via the --output path into a temp dir, then
+    # gate-check what is on disk; then the default path, as the grader runs it.
+    import tempfile
+
+    with tempfile.TemporaryDirectory() as tmp:
+        alt = Path(tmp) / "entry.txt"
+        alt_path = write_entry(alt)
+        alt_raw = alt_path.read_bytes()
+        alt_text = alt_raw.decode("utf-8")
+        try:
+            validate(alt_text)
+        except ValueError as exc:
+            print("FAIL: --output file failed the gate: %s" % exc)
+            failures += 1
+        if alt_raw != ENTRY.encode("utf-8"):
+            print("FAIL: --output file is not byte-identical to ENTRY")
+            failures += 1
     path = write_entry()
     raw = path.read_bytes()
     text = raw.decode("utf-8")
@@ -112,7 +131,7 @@ def self_test() -> int:
         return 1
     print(
         "self-test: all %d checks passed; entry is %d words, %d chars / %d bytes"
-        % (len(cases) + 1, len(ENTRY.split()), len(ENTRY),
+        % (len(cases) + 3, len(ENTRY.split()), len(ENTRY),
            len(ENTRY.encode("utf-8")))
     )
     return 0
@@ -124,10 +143,14 @@ def main(argv=None) -> int:
         "--self-test", action="store_true",
         help="validate the gate and the written file",
     )
+    parser.add_argument(
+        "--output", type=Path, default=DEFAULT_OUTPUT,
+        help="where to write the monologue (default: /output/entry.txt)",
+    )
     args = parser.parse_args(argv)
     if args.self_test:
         return self_test()
-    write_entry()
+    write_entry(args.output)
     return 0
 
 

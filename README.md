@@ -18,6 +18,7 @@ The speaker is a lich three centuries into keeping his tower, interrupted mid-te
 
 ```sh
 python3 main.py            # writes /output/entry.txt
+python3 main.py --output /tmp/entry.txt  # writes to a path of your choice
 python3 main.py --self-test  # validates the gate and the written file
 ```
 
